@@ -1,22 +1,23 @@
 import express from 'express';
+import axios from 'axios';
+import Datastore from 'nedb-promises';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 8080;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const db = Datastore.create('./webhooks.db');
 
-// Handle POST requests to '/webhook' endpoint
-app.post('/webhook', (req, res) => {
-    console.log('Webhook received:', req.body);
-
-    // Process the webhook data
-    // This is where you would typically handle payment events, such as processing payments,
-    // updating order status, sending notifications, etc.
-
-    // Respond to the webhook sender to acknowledge receipt
-    res.status(200).send('Webhook received');
+app.get('/ping', async (req, res) => {
+    const webhooks = await db.find({});
+    webhooks.forEach(webhook => {
+        // In a real scenario, use a HTTP client to call the webhook URL.
+        console.log(`Pinging ${webhook.url}`);
+        // Example: axios.post(webhook.url, { data: "Ping event triggered" });
+    });
+    res.json({ message: "Pinged all registered webhooks" });
 });
 
 app.post('/register-webhook', async (req, res) => {
@@ -45,7 +46,7 @@ app.post('/simulate-payment', async (req, res) => {
     const webhooks = await db.find({});
     webhooks.forEach(webhook => {
         console.log(`Triggering payment event to ${webhook.url}`, eventPayload);
-        // Example: axios.post(webhook.url, eventPayload);
+        axios.post(webhook.url, eventPayload);
     });
 
     res.json({ message: "Simulated payment event", eventPayload });
