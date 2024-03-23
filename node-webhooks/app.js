@@ -5,17 +5,15 @@ import Datastore from 'nedb-promises';
 const app = express();
 const PORT = 8080;
 
-// Middleware to parse JSON bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const db = Datastore.create('./webhooks.db');
 
 app.get('/ping', async (req, res) => {
-    const webhooks = await db.find({});
+    const webhooks = await db.find();
     webhooks.forEach(webhook => {
-        // In a real scenario, use a HTTP client to call the webhook URL.
         console.log(`Pinging ${webhook.url}`);
-        // Example: axios.post(webhook.url, { data: "Ping event triggered" });
+        axios.post(webhook.url, { data: "Ping event triggered" });
     });
     res.json({ message: "Pinged all registered webhooks" });
 });
@@ -43,7 +41,7 @@ app.post('/simulate-payment', async (req, res) => {
         currency,
     };
 
-    const webhooks = await db.find({});
+    const webhooks = await db.find();
     webhooks.forEach(webhook => {
         console.log(`Triggering payment event to ${webhook.url}`, eventPayload);
         axios.post(webhook.url, eventPayload);
